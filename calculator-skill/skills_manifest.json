@@ -1,0 +1,12 @@
+{
+  "skills": [
+    {
+      "name": "scientific_calculator",
+      "module": "skills.scientific_calculator",
+      "function": "scientific_calculator_skill",
+      "description": "Advanced scientific calculator with comprehensive mathematical functions including trigonometry, logarithms, statistics, calculus, and more.",
+      "categories": ["mathematics", "calculator", "science", "engineering"],
+      "enabled": true
+    }
+  ]
+}

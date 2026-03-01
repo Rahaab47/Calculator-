@@ -1,0 +1,51 @@
+{
+  "name": "scientific_calculator",
+  "version": "1.0.0",
+  "description": "Advanced scientific calculator with comprehensive mathematical functions including trigonometry, logarithms, statistics, calculus, and more.",
+  "author": "Claude Code",
+  "keywords": [
+    "calculator",
+    "scientific",
+    "mathematics",
+    "trigonometry",
+    "calculus",
+    "statistics",
+    "engineering",
+    "physics"
+  ],
+  "features": [
+    "Basic arithmetic operations (+, -, *, /, ^, %)",
+    "Trigonometric functions (sin, cos, tan, asin, acos, atan)",
+    "Hyperbolic functions (sinh, cosh, tanh)",
+    "Logarithmic functions (log, ln, log10, log2)",
+    "Exponential functions (exp)",
+    "Square root and nth root",
+    "Factorial, permutation, and combination",
+    "Quadratic equation solver",
+    "Matrix operations",
+    "Statistical functions (mean, median, mode, stdev)",
+    "Calculus operations (derivatives, integrals)",
+    "Complex number support",
+    "Memory functions (store, recall, clear, add, subtract)",
+    "Calculation history"
+  ],
+  "usage_examples": [
+    "calculate sin(pi/2)",
+    "calculate 2^8",
+    "quadratic 1 -5 6",
+    "factorial 5",
+    "derivative x^2 + 3*x + 1 at 2",
+    "integral x^2 from 0 to 2",
+    "memory store 42",
+    "memory recall"
+  ],
+  "dependencies": [
+    "math",
+    "cmath",
+    "statistics",
+    "typing",
+    "re"
+  ],
+  "entry_point": "scientific_calculator_skill",
+  "file_path": "skills/scientific_calculator.py"
+}
