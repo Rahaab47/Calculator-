@@ -472,7 +472,7 @@
                 <button class="btn btn-function" onclick="appendToDisplay('log(')">log</button>
                 <button class="btn btn-function" onclick="appendToDisplay('ln(')">ln</button>
                 <button class="btn btn-function" onclick="appendToDisplay('^')">^</button>
-                <button class="btn btn-function" onclick="appendToDisplay('!')">x!</button>
+                <button class="btn btn-function" onclick="calculateFactorial()">x!</button>
                 <button class="btn btn-operator" onclick="appendToDisplay('-')">−</button>
 
                 <!-- Row 4 -->
@@ -592,34 +592,11 @@
 
         function calculate() {
             try {
-                // Replace display symbols with JavaScript equivalents
+                // Combine expression and current input
                 let calcExpression = expression + currentInput;
-                calcExpression = calcExpression
-                    .replace(/×/g, '*')
-                    .replace(/÷/g, '/')
-                    .replace(/π/g, 'Math.PI')
-                    .replace(/e/g, 'Math.E')
-                    .replace(/\^/g, '**');
 
-                // Handle special functions
-                calcExpression = calcExpression
-                    .replace(/sin\(/g, 'Math.sin(')
-                    .replace(/cos\(/g, 'Math.cos(')
-                    .replace(/tan\(/g, 'Math.tan(')
-                    .replace(/asin\(/g, 'Math.asin(')
-                    .replace(/acos\(/g, 'Math.acos(')
-                    .replace(/atan\(/g, 'Math.atan(')
-                    .replace(/sqrt\(/g, 'Math.sqrt(')
-                    .replace(/log\(/g, 'Math.log10(')
-                    .replace(/ln\(/g, 'Math.log(')
-                    .replace(/exp\(/g, 'Math.exp(');
-
-                // Handle factorial (needs special implementation)
-                calcExpression = calcExpression.replace(/(\d+)!/g, function(match, num) {
-                    return factorial(parseInt(num));
-                });
-
-                const result = eval(calcExpression);
+                // Evaluate the expression using a safer approach
+                const result = evaluateExpression(calcExpression);
 
                 // Add to history
                 addToHistory(calcExpression, result);
@@ -630,13 +607,100 @@
                 updateDisplay();
 
             } catch (error) {
-                showError('Error');
+                console.error('Calculation error:', error);
+                showError('Error: ' + error.message);
             }
+        }
+
+        function evaluateExpression(expr) {
+            try {
+                // Replace display symbols with JavaScript equivalents
+                let processedExpr = expr
+                    .replace(/×/g, '*')
+                    .replace(/÷/g, '/')
+                    .replace(/π/g, 'Math.PI')
+                    .replace(/e/g, 'Math.E')
+                    .replace(/\^/g, '**');
+
+                // Process the expression to handle functions properly
+                processedExpr = processFunctions(processedExpr);
+
+                // Validate the expression to ensure it's safe
+                if (!isValidExpression(processedExpr)) {
+                    throw new Error('Invalid expression');
+                }
+
+                // Evaluate using Function constructor (safer than eval)
+                return new Function('return ' + processedExpr)();
+            } catch (error) {
+                console.error('Expression evaluation error:', error);
+                console.error('Original expression:', expr);
+                console.error('Processed expression:', processedExpr);
+                throw error;
+            }
+        }
+
+        function isValidExpression(expr) {
+            // Check for potentially dangerous patterns
+            const dangerousPatterns = [
+                /\b(document|window|location|navigator|eval|setTimeout|setInterval)\b/,
+                /\b(import|require|global|process)\b/,
+                /constructor/
+            ];
+
+            for (const pattern of dangerousPatterns) {
+                if (pattern.test(expr)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function processFunctions(expr) {
+            // Handle factorial separately since it's postfix
+            expr = expr.replace(/(\d+(?:\.\d+)?)!/g, function(match, num) {
+                return factorial(parseInt(num));
+            });
+
+            // Handle constants (do this FIRST to avoid conflicts)
+            // Replace π with Math.PI
+            expr = expr.replace(/π/g, 'Math.PI');
+            // Replace standalone e (but not e inside functions like exp) with Math.E
+            expr = expr.replace(/\be\b/g, 'Math.E');
+
+            // Handle functions that need to be prefixed with Math.
+            // Using word boundary to avoid partial matches
+            expr = expr.replace(/\bsin\(/g, 'Math.sinDeg(');
+            expr = expr.replace(/\bcos\(/g, 'Math.cosDeg(');
+            expr = expr.replace(/\btan\(/g, 'Math.tanDeg(');
+            expr = expr.replace(/\basin\(/g, 'Math.asin(');  // asin returns radians
+            expr = expr.replace(/\bacos\(/g, 'Math.acos(');  // acos returns radians
+            expr = expr.replace(/\batan\(/g, 'Math.atan(');  // atan returns radians
+            expr = expr.replace(/\bsqrt\(/g, 'Math.sqrt(');
+            expr = expr.replace(/\blog\(/g, 'Math.log10(');
+            expr = expr.replace(/\bln\(/g, 'Math.log(');
+            expr = expr.replace(/\bexp\(/g, 'Math.exp(');
+            expr = expr.replace(/\babs\(/g, 'Math.abs(');
+            expr = expr.replace(/\bceil\(/g, 'Math.ceil(');
+            expr = expr.replace(/\bfloor\(/g, 'Math.floor(');
+            expr = expr.replace(/\brandom\(\)/g, 'Math.random()');
+
+            // Handle percentage
+            expr = expr.replace(/(\d+(?:\.\d+)?)%/g, function(match, num) {
+                return '(' + num + '/100)';
+            });
+
+            return expr;
         }
 
         function factorial(n) {
             if (n < 0) return NaN;
             if (n === 0 || n === 1) return 1;
+
+            // Prevent calculating factorials that are too large
+            if (n > 170) return Infinity; // JavaScript's maximum safe integer for factorial
+
             let result = 1;
             for (let i = 2; i <= n; i++) {
                 result *= i;
@@ -647,7 +711,7 @@
         function calculateFactorial() {
             try {
                 const num = parseFloat(currentInput);
-                if (num >= 0 && Number.isInteger(num)) {
+                if (!isNaN(num) && num >= 0 && Number.isInteger(num)) {
                     const result = factorial(num);
                     addToHistory(`${num}!`, result);
                     currentInput = result.toString();
@@ -711,7 +775,11 @@
         }
 
         function memoryAdd() {
-            memory += parseFloat(currentInput);
+            memory += parseFloat(currentInput || 0);
+        }
+
+        function memorySubtract() {
+            memory -= parseFloat(currentInput || 0);
         }
 
         function addToHistory(expr, result) {
@@ -782,6 +850,28 @@
             }, 1500);
         }
 
+        // Additional utility functions for advanced calculations
+        function degToRad(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+
+        function radToDeg(radians) {
+            return radians * (180 / Math.PI);
+        }
+
+        // Degree-based trigonometric functions
+        Math.sinDeg = function(degrees) {
+            return Math.sin(degToRad(degrees));
+        };
+
+        Math.cosDeg = function(degrees) {
+            return Math.cos(degToRad(degrees));
+        };
+
+        Math.tanDeg = function(degrees) {
+            return Math.tan(degToRad(degrees));
+        };
+
         // Keyboard support
         document.addEventListener('keydown', function(event) {
             const key = event.key;
@@ -815,6 +905,8 @@
                 appendToDisplay(')');
             } else if (key === '^') {
                 appendToDisplay('^');
+            } else if (key === '%') {
+                appendToDisplay('%');
             } else if (key.toLowerCase() === 'h') {
                 showHistory();
             }
